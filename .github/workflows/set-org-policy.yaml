@@ -1,0 +1,40 @@
+name: Apply Org Policy
+
+on:
+  workflow_dispatch:
+    inputs:
+      repos_csv:
+        description: "owner/repo comma-separated (optional)"
+        required: false
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install jq
+        run: sudo apt-get update && sudo apt-get install -y jq
+
+      - name: Configure gh with PAT
+        env:
+          ORG_ADMIN_TOKEN: ${{ secrets.ORG_ADMIN_TOKEN }}
+        run: |
+          unset GITHUB_TOKEN
+          echo "GH_TOKEN=$ORG_ADMIN_TOKEN" >> $GITHUB_ENV
+          gh --version
+          echo "Actor: $(gh api user --jq .login)"
+          echo "Org  : $(gh api orgs/${{ github.repository_owner }} --jq .login)"
+
+      - name: Apply org ruleset
+        env: { ORG_NAME: ${{ github.repository_owner }} }
+        run: bash github/scripts/org-ruleset.sh
+
+      - name: Labels + classic protection (optional)
+        if: ${{ inputs.repos_csv != '' }}
+        run: |
+          IFS=',' read -ra REPOS <<< "${{ inputs.repos_csv }}"
+          for r in "${REPOS[@]}"; do
+            bash github/scripts/sync-labels.sh "$r"
+            bash github/scripts/repo-branch-protect.sh "$r" main
+          done
