@@ -1,13 +1,11 @@
 #!/usr/bin/env bash
-# Fallback per-repo protection if you want it on top of rulesets.
 set -euo pipefail
-repo="${1:?owner/repo required}"
-branch="${2:-main}"
+repo="${1:?owner/repo}"; branch="${2:-main}"
 gh api -X PUT "repos/$repo/branches/$branch/protection" \
   -H "Accept: application/vnd.github+json" \
   -f required_status_checks.strict=true \
   -F required_status_checks.contexts[]="ci" \
   -F enforce_admins=true \
   -F required_pull_request_reviews.required_approving_review_count:=1 \
-  -F restrictions= >/dev/null
-echo "Branch protection applied for $repo:$branch."
+  -F restrictions=
+echo "Protected $repo:$branch"

@@ -14,8 +14,9 @@ jobs:
       - uses: actions/checkout@v4
       - run: sudo apt-get update && sudo apt-get install -y jq
 
-      - name: Auth
-        env: { ORG_ADMIN_TOKEN: ${{ secrets.ORG_ADMIN_TOKEN }} }
+      - name: Auth (PAT)
+        env:
+          ORG_ADMIN_TOKEN: ${{ secrets.ORG_ADMIN_TOKEN }}
         run: |
           unset GITHUB_TOKEN
           echo "GH_TOKEN=$ORG_ADMIN_TOKEN" >> $GITHUB_ENV
@@ -24,13 +25,12 @@ jobs:
           echo "Org  : $(gh api orgs/${{ github.repository_owner }} --jq .login)"
 
       - name: List repos
-        id: list
         run: |
           gh repo list "${{ github.repository_owner }}" --json name,visibility -L 200 \
-            | jq -r '.[] | "\(.visibility)|${{ github.repository_owner }}/\(.name)"' > repos.txt
+          | jq -r '.[] | "\(.visibility)|${{ github.repository_owner }}/\(.name)"' > repos.txt
           cat repos.txt
 
-      - name: Protect + labels
+      - name: Apply classic protection + labels
         run: |
           while IFS="|" read -r vis full; do
             if [[ "${{ inputs.only_private }}" == "true" && "$vis" != "private" ]]; then continue; fi
