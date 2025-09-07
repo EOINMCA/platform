@@ -1,9 +1,10 @@
-name: apply-org-policy
+name: Apply Org Policy
+
 on:
   workflow_dispatch:
     inputs:
       repos_csv:
-        description: "owner/repo comma-separated (optional)"
+        description: "Optional repos (owner/repo,comma-separated) for labels+classic protection"
         required: false
 
 jobs:
