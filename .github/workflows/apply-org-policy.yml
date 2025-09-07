@@ -1,10 +1,12 @@
 name: apply-org-policy
+
 on:
   workflow_dispatch:
     inputs:
       repos_csv:
-        description: "owner/repo comma-separated (optional)"
+        description: "Optional owner/repo list comma-separated to also label/protect"
         required: false
+
 jobs:
   apply:
     runs-on: ubuntu-latest
@@ -19,6 +21,7 @@ jobs:
           GH_TOKEN: ${{ secrets.ORG_ADMIN_TOKEN }}
         run: |
           gh --version
+          unset GITHUB_TOKEN
           echo "$GH_TOKEN" | gh auth login --with-token
           gh auth status
 
