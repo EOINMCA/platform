@@ -15,27 +15,22 @@ jobs:
       - name: Install jq
         run: sudo apt-get update && sudo apt-get install -y jq
 
-      - name: Use PAT for gh
+      - name: Configure gh auth via PAT
         env:
           ORG_ADMIN_TOKEN: ${{ secrets.ORG_ADMIN_TOKEN }}
         run: |
           unset GITHUB_TOKEN
-          echo "GH ready"; gh --version
-          # expose for later steps
           echo "GH_TOKEN=$ORG_ADMIN_TOKEN" >> $GITHUB_ENV
-
-      - name: Sanity check identity
-        run: |
-          echo "Actor:" $(gh api user --jq .login)
-          echo "Org  :" $(gh api orgs/${{ secrets.ORG_NAME }} --jq .login)
-
-      - name: Set env
-        run: echo "ORG_NAME=${{ secrets.ORG_NAME }}" >> $GITHUB_ENV
+          gh --version
+          echo "Actor: $(gh api user --jq .login)"
+          echo "Org  : $(gh api orgs/${{ github.repository_owner }} --jq .login)"
 
       - name: Org settings
+        env: { ORG_NAME: ${{ github.repository_owner }} }
         run: bash github/scripts/org-settings.sh
 
       - name: Org ruleset
+        env: { ORG_NAME: ${{ github.repository_owner }} }
         run: bash github/scripts/org-ruleset.sh
 
       - name: Per-repo label + protection (optional)
