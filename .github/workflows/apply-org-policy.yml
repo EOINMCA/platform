@@ -1,10 +1,9 @@
 name: apply-org-policy
-
 on:
   workflow_dispatch:
     inputs:
       repos_csv:
-        description: "Optional owner/repo list comma-separated to also label/protect"
+        description: "owner/repo comma-separated (optional)"
         required: false
 
 jobs:
@@ -16,14 +15,19 @@ jobs:
       - name: Install jq
         run: sudo apt-get update && sudo apt-get install -y jq
 
-      - name: Auth gh
+      - name: Use PAT for gh
         env:
-          GH_TOKEN: ${{ secrets.ORG_ADMIN_TOKEN }}
+          ORG_ADMIN_TOKEN: ${{ secrets.ORG_ADMIN_TOKEN }}
         run: |
-          gh --version
           unset GITHUB_TOKEN
-          echo "$GH_TOKEN" | gh auth login --with-token
-          gh auth status
+          echo "GH ready"; gh --version
+          # expose for later steps
+          echo "GH_TOKEN=$ORG_ADMIN_TOKEN" >> $GITHUB_ENV
+
+      - name: Sanity check identity
+        run: |
+          echo "Actor:" $(gh api user --jq .login)
+          echo "Org  :" $(gh api orgs/${{ secrets.ORG_NAME }} --jq .login)
 
       - name: Set env
         run: echo "ORG_NAME=${{ secrets.ORG_NAME }}" >> $GITHUB_ENV
