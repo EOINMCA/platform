@@ -1,0 +1,10 @@
+[
+  {"name":"type:bug","color":"d73a4a"},
+  {"name":"type:feature","color":"a2eeef"},
+  {"name":"type:task","color":"ededed"},
+  {"name":"prio:high","color":"b60205"},
+  {"name":"area:ml","color":"5319e7"},
+  {"name":"area:infra","color":"1d76db"},
+  {"name":"area:ios","color":"fbca04"},
+  {"name":"area:macos","color":"c2e0c6"}
+]

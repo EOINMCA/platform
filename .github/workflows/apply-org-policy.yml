@@ -1,0 +1,30 @@
+name: apply-org-policy
+on:
+  workflow_dispatch:
+    inputs:
+      repos_csv:
+        description: "Optional owner/repo list comma-separated to also label/protect"
+        required: false
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: cli/cli-action@v2
+      - run: sudo apt-get update && sudo apt-get install -y jq
+      - name: Auth
+        run: echo "${{ secrets.ORG_ADMIN_TOKEN }}" | gh auth login --with-token
+      - name: Set env
+        run: echo "ORG_NAME=${{ secrets.ORG_NAME }}" >> $GITHUB_ENV
+      - name: Org settings
+        run: bash github/scripts/org-settings.sh
+      - name: Org ruleset
+        run: bash github/scripts/org-ruleset.sh
+      - name: Optional per-repo label + protection
+        if: "${{ inputs.repos_csv != '' }}"
+        run: |
+          IFS=',' read -ra REPOS <<< "${{ inputs.repos_csv }}"
+          for r in "${REPOS[@]}"; do
+            bash github/scripts/sync-labels.sh "$r"
+            bash github/scripts/repo-branch-protect.sh "$r" main
+          done
