@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       repos_csv:
-        description: "Optional repos (owner/repo,comma-separated) for labels+classic protection"
+        description: "owner/repo comma-separated (optional)"
         required: false
 
 jobs:
@@ -16,7 +16,7 @@ jobs:
       - name: Install jq
         run: sudo apt-get update && sudo apt-get install -y jq
 
-      - name: Configure gh auth via PAT
+      - name: Configure gh with PAT
         env:
           ORG_ADMIN_TOKEN: ${{ secrets.ORG_ADMIN_TOKEN }}
         run: |
@@ -26,15 +26,11 @@ jobs:
           echo "Actor: $(gh api user --jq .login)"
           echo "Org  : $(gh api orgs/${{ github.repository_owner }} --jq .login)"
 
-      - name: Org settings
-        env: { ORG_NAME: ${{ github.repository_owner }} }
-        run: bash github/scripts/org-settings.sh
-
-      - name: Org ruleset
+      - name: Apply org ruleset
         env: { ORG_NAME: ${{ github.repository_owner }} }
         run: bash github/scripts/org-ruleset.sh
 
-      - name: Per-repo label + protection (optional)
+      - name: Labels + classic protection (optional)
         if: ${{ inputs.repos_csv != '' }}
         run: |
           IFS=',' read -ra REPOS <<< "${{ inputs.repos_csv }}"
