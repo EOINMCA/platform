@@ -1,24 +1,21 @@
 name: Apply Org Policy
-
 on:
   workflow_dispatch:
     inputs:
-      repos_csv:
-        description: "owner/repo comma-separated (optional)"
+      only_private:
+        description: "Protect only private repos (true/false)"
         required: false
+        default: "false"
 
 jobs:
   apply:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - run: sudo apt-get update && sudo apt-get install -y jq
 
-      - name: Install jq
-        run: sudo apt-get update && sudo apt-get install -y jq
-
-      - name: Configure gh with PAT
-        env:
-          ORG_ADMIN_TOKEN: ${{ secrets.ORG_ADMIN_TOKEN }}
+      - name: Auth
+        env: { ORG_ADMIN_TOKEN: ${{ secrets.ORG_ADMIN_TOKEN }} }
         run: |
           unset GITHUB_TOKEN
           echo "GH_TOKEN=$ORG_ADMIN_TOKEN" >> $GITHUB_ENV
@@ -26,16 +23,18 @@ jobs:
           echo "Actor: $(gh api user --jq .login)"
           echo "Org  : $(gh api orgs/${{ github.repository_owner }} --jq .login)"
 
-      - name: Apply org ruleset
-        env:
-          ORG_NAME: ${{ github.repository_owner }}
-        run: bash github/scripts/org-ruleset.sh
-
-      - name: Labels + classic protection (optional)
-        if: ${{ inputs.repos_csv != '' }}
+      - name: List repos
+        id: list
         run: |
-          IFS=',' read -ra REPOS <<< "${{ inputs.repos_csv }}"
-          for r in "${REPOS[@]}"; do
-            bash github/scripts/sync-labels.sh "$r"
-            bash github/scripts/repo-branch-protect.sh "$r" main
-          done
+          gh repo list "${{ github.repository_owner }}" --json name,visibility -L 200 \
+            | jq -r '.[] | "\(.visibility)|${{ github.repository_owner }}/\(.name)"' > repos.txt
+          cat repos.txt
+
+      - name: Protect + labels
+        run: |
+          while IFS="|" read -r vis full; do
+            if [[ "${{ inputs.only_private }}" == "true" && "$vis" != "private" ]]; then continue; fi
+            echo ">> $full"
+            bash github/scripts/repo-branch-protect.sh "$full" main
+            bash github/scripts/sync-labels.sh "$full"
+          done < repos.txt
