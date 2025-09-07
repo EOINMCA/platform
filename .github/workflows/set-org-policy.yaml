@@ -27,7 +27,8 @@ jobs:
           echo "Org  : $(gh api orgs/${{ github.repository_owner }} --jq .login)"
 
       - name: Apply org ruleset
-        env: { ORG_NAME: ${{ github.repository_owner }} }
+        env:
+          ORG_NAME: ${{ github.repository_owner }}
         run: bash github/scripts/org-ruleset.sh
 
       - name: Labels + classic protection (optional)
