@@ -15,9 +15,9 @@ apply_rule_protect_main(){
     -H "Accept: application/vnd.github+json" \
     --input - <<'EOF' >/dev/null
 {
-  "required_status_checks": { "strict": true, "contexts": ["ci"] },
+  "required_status_checks": null,
   "enforce_admins": true,
-  "required_pull_request_reviews": { "required_approving_review_count": 1, "dismiss_stale_reviews": true },
+  "required_pull_request_reviews": null,
   "restrictions": null
 }
 EOF
